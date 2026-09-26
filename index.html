@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SVG Book Toolkit</title>
+<style>
+  :root{
+    --bg:#12141a; --panel:#1a1d26; --border:#2a2e3a;
+    --text:#e7e8ec; --muted:#8b8f9e;
+    --accent:#5b8cff; --accent-soft:rgba(91,140,255,0.14);
+    --ok:#4caf7d; --ok-soft:rgba(76,175,125,0.14);
+    --err:#e2685f; --err-soft:rgba(226,104,95,0.14);
+    --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:var(--sans);line-height:1.5;}
+  .wrap{max-width:820px;margin:0 auto;padding:28px 18px 80px;}
+  header h1{font-size:22px;font-weight:650;margin:0 0 4px;}
+  header p{color:var(--muted);font-size:14px;margin:0 0 18px;}
+  header .copy{font-size:12px;color:var(--muted);margin-bottom:20px;}
+  .tabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:18px;border-bottom:1px solid var(--border);padding-bottom:10px;}
+  .tabs button{
+    background:#20232e;border:1px solid var(--border);color:var(--text);
+    border-radius:8px;padding:8px 12px;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--sans);
+  }
+  .tabs button:hover{border-color:#3a3f4e;}
+  .tabs button.active{background:var(--accent);border-color:var(--accent);color:#0d1220;}
+  .panel{display:none;background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:22px;}
+  .panel.active{display:block;}
+  .field{display:block;margin-bottom:14px;}
+  .field > span{display:block;font-size:13px;font-weight:600;margin-bottom:6px;}
+  .field > span small{font-weight:400;color:var(--muted);margin-left:4px;}
+  input[type=text],input[type=number],select,textarea{
+    width:100%;background:#0e1015;border:1px solid var(--border);color:var(--text);
+    border-radius:8px;padding:10px 12px;font-size:14px;font-family:var(--sans);outline:none;
+  }
+  input.mono,textarea.mono{font-family:var(--mono);font-size:13px;}
+  textarea{min-height:100px;resize:vertical;}
+  input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft);}
+  .row{display:flex;gap:12px;flex-wrap:wrap;}
+  .row .field{flex:1;min-width:120px;}
+  .options-row{display:flex;flex-wrap:wrap;gap:10px 18px;margin-bottom:14px;}
+  label.checkbox{display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer;}
+  label.checkbox input{width:15px;height:15px;accent-color:var(--accent);}
+  .actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:8px;}
+  button.btn{
+    font-family:var(--sans);font-size:14px;font-weight:600;border-radius:8px;padding:10px 16px;
+    border:1px solid var(--border);background:#20232e;color:var(--text);cursor:pointer;
+  }
+  button.btn:hover:not(:disabled){border-color:#3a3f4e;}
+  button.btn:disabled{opacity:0.4;cursor:not-allowed;}
+  button.btn.primary{background:var(--accent);border-color:var(--accent);color:#0d1220;}
+  button.btn.primary:hover:not(:disabled){background:#6f9aff;}
+  .note{font-size:12.5px;color:var(--muted);line-height:1.55;margin:0 0 12px;padding:12px 14px;
+    background:#0e1015;border:1px solid var(--border);border-radius:8px;}
+  .note code{font-family:var(--mono);background:#1a1d26;padding:1px 5px;border-radius:4px;font-size:12px;}
+  .log{height:180px;overflow-y:auto;background:#0e1015;border:1px solid var(--border);border-radius:8px;
+    padding:10px 12px;font-family:var(--mono);font-size:12.5px;color:var(--muted);margin-top:14px;}
+  .log .line{padding:1px 0;white-space:pre-wrap;word-break:break-all;}
+  .log .line.ok{color:var(--ok);}
+  .log .line.err{color:var(--err);}
+  .log .line.info{color:var(--accent);}
+  .progress-bar{height:8px;background:#0e1015;border-radius:99px;overflow:hidden;margin:10px 0;}
+  .progress-fill{height:100%;width:0%;background:var(--accent);transition:width .15s;}
+  details.adv{margin:8px 0 14px;}
+  details.adv summary{cursor:pointer;font-size:13px;font-weight:600;color:var(--muted);}
+  .drop{
+    border:1.5px dashed var(--border);border-radius:10px;padding:28px 16px;text-align:center;
+    color:var(--muted);margin-bottom:14px;cursor:pointer;
+  }
+  .drop.drag{border-color:var(--accent);background:var(--accent-soft);}
+  .file-list{list-style:none;margin:0;padding:0;max-height:220px;overflow-y:auto;border-top:1px solid var(--border);}
+  .file-list li{display:flex;gap:8px;align-items:center;padding:6px 2px;border-bottom:1px solid var(--border);font-size:13px;}
+  .file-list .name{flex:1;font-family:var(--mono);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .preview img{max-width:100%;border-radius:8px;border:1px solid var(--border);margin-top:10px;}
+  .tutorial h2{font-size:16px;margin:18px 0 8px;}
+  .tutorial h2:first-child{margin-top:0;}
+  .tutorial p,.tutorial li{font-size:14px;color:var(--muted);}
+  .tutorial code{font-family:var(--mono);font-size:12.5px;background:#0e1015;padding:1px 5px;border-radius:4px;}
+  .tutorial ol{padding-left:20px;}
+  [hidden]{display:none !important;}
+
+  site-footer, .site-footer{
+    margin-top:40px;
+    padding:28px 18px 36px;
+    text-align:center;
+    border-top:1px solid var(--border);
+    color:var(--muted);
+    font-size:13px;
+    line-height:1.7;
+  }
+  .site-footer p{margin:4px 0;}
+  .site-footer a{
+    color:var(--accent);
+    text-decoration:none;
+    font-weight:600;
+  }
+  .site-footer a:hover{text-decoration:underline;}
+  .site-footer .heart{color:#e2685f;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>SVG Book Toolkit</h1>
+    <p>Download page SVGs + assets, build multi-page PDFs, or flatten a composite SVG to PNG. Runs locally.</p>
+    <div class="copy">© 2026 Avrixfal (GitHub: VoxyB89) · See LICENSE · You are responsible for how you use this tool</div>
+  </header>
+
+  <nav class="tabs" id="tabs">
+    <button type="button" data-tab="dl" class="active">Batch downloader</button>
+    <button type="button" data-tab="pdf">Folder → PDF</button>
+    <button type="button" data-tab="png">Composite → PNG</button>
+    <button type="button" data-tab="help">How to</button>
+  </nav>
+
+  <!-- ========== BATCH DOWNLOADER ========== -->
+  <section class="panel active" id="tab-dl">
+    <p class="note">Paste one example file URL. The changing number becomes <code>{n}</code>. Referenced images are saved using paths under the SVG’s URL directory (e.g. <code>135/img/4.png</code>). SVGs land at the ZIP root.</p>
+
+    <label class="field">
+      <span>Example URL</span>
+      <input id="dl-url" type="text" class="mono" spellcheck="false" placeholder="https://example.com/.../1.svg">
+    </label>
+    <label class="field">
+      <span>URL pattern</span>
+      <input id="dl-tpl" type="text" class="mono" spellcheck="false">
+    </label>
+    <div class="row">
+      <label class="field"><span>From</span><input id="dl-from" type="number" value="1"></label>
+      <label class="field"><span>To</span><input id="dl-to" type="number" value="10"></label>
+      <label class="field"><span>Zero-pad</span><input id="dl-pad" type="number" value="0" min="0" max="10"></label>
+    </div>
+    <div class="options-row">
+      <label class="checkbox"><input type="checkbox" id="dl-assets" checked><span>Download referenced images</span></label>
+      <label class="checkbox"><input type="checkbox" id="dl-rewrite" checked><span>Rewrite hrefs in saved SVGs</span></label>
+      <label class="checkbox"><input type="checkbox" id="dl-png"><span>Also export {n}.png</span></label>
+    </div>
+    <details class="adv">
+      <summary>Proxy / cookies</summary>
+      <label class="field" style="margin-top:12px">
+        <span>CORS proxy prefix</span>
+        <input id="dl-proxy" type="text" class="mono" placeholder="http://localhost:8788/proxy?url=">
+      </label>
+      <label class="field">
+        <span>Cookie header</span>
+        <input id="dl-cookie" type="text" class="mono" placeholder="sessionid=…">
+      </label>
+      <label class="field">
+        <span>Concurrency</span>
+        <input id="dl-conc" type="number" value="3" min="1" max="8">
+      </label>
+    </details>
+    <div class="actions">
+      <button type="button" class="btn primary" id="dl-start">Start</button>
+      <button type="button" class="btn" id="dl-stop" disabled>Stop</button>
+      <button type="button" class="btn" id="dl-zip" hidden>Download ZIP</button>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" id="dl-fill"></div></div>
+    <div class="log" id="dl-log"></div>
+  </section>
+
+  <!-- ========== FOLDER TO PDF ========== -->
+  <section class="panel" id="tab-pdf">
+    <p class="note">Pick a folder that has page SVGs/PNGs at the root and asset subfolders (<code>img/</code>, <code>shade/</code>, …). For big books use the local server so the browser doesn’t run out of memory.</p>
+
+    <div class="drop" id="pdf-drop">Drop a folder here, or use the buttons below</div>
+    <div class="actions" style="margin-bottom:12px">
+      <button type="button" class="btn" id="pdf-pick-folder">Choose folder</button>
+      <button type="button" class="btn" id="pdf-pick-files">Choose files</button>
+      <input type="file" id="pdf-folder-input" webkitdirectory directory multiple hidden>
+      <input type="file" id="pdf-files-input" accept=".svg,.png,.jpg,.jpeg,.gif,.webp,.bmp,image/*" multiple hidden>
+    </div>
+    <div id="pdf-list-wrap" hidden>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:6px"><span id="pdf-count">0</span></div>
+      <ul class="file-list" id="pdf-list"></ul>
+    </div>
+
+    <div class="row" style="margin-top:12px">
+      <label class="field">
+        <span>Page size</span>
+        <select id="pdf-size">
+          <option value="a4p">A4 portrait (stretch fill)</option>
+          <option value="a4l">A4 landscape</option>
+          <option value="letterp">Letter portrait</option>
+          <option value="letterl">Letter landscape</option>
+          <option value="own">Own size (no stretch)</option>
+        </select>
+      </label>
+      <label class="field">
+        <span>Output name</span>
+        <input id="pdf-outname" type="text" value="combined.pdf">
+      </label>
+    </div>
+
+    <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border)">
+      <label class="field">
+        <span>Local server URL</span>
+        <input id="pdf-server" type="text" class="mono" value="http://localhost:8788">
+      </label>
+      <label class="field">
+        <span>Absolute folder path (server reads this from disk)</span>
+        <input id="pdf-abspath" type="text" class="mono" placeholder="C:\Users\You\Downloads\book">
+      </label>
+      <div class="actions">
+        <button type="button" class="btn primary" id="pdf-server-go">Convert via local server</button>
+        <button type="button" class="btn" id="pdf-health">Check server</button>
+        <button type="button" class="btn" id="pdf-browser-go">Convert in browser (small sets)</button>
+      </div>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" id="pdf-fill"></div></div>
+    <div class="log" id="pdf-log"></div>
+    <div class="actions" style="margin-top:10px">
+      <button type="button" class="btn primary" id="pdf-download" hidden>Open / download PDF</button>
+    </div>
+  </section>
+
+  <!-- ========== COMPOSITE PNG ========== -->
+  <section class="panel" id="tab-png">
+    <p class="note">One SVG that references external images → single PNG. Paste a URL or the SVG markup. Proxy optional.</p>
+    <label class="field">
+      <span>SVG URL <small>or leave empty and paste markup below</small></span>
+      <input id="png-url" type="text" class="mono" spellcheck="false">
+    </label>
+    <label class="field">
+      <span>SVG markup</span>
+      <textarea id="png-markup" class="mono" spellcheck="false"></textarea>
+    </label>
+    <label class="field">
+      <span>Base URL for relative refs</span>
+      <input id="png-base" type="text" class="mono" placeholder="https://example.com/path/">
+    </label>
+    <div class="row">
+      <label class="field"><span>Scale</span><input id="png-scale" type="number" value="2" min="0.5" max="8" step="0.5"></label>
+      <label class="field"><span>Background</span><input id="png-bg" type="text" class="mono" value="#ffffff"></label>
+    </div>
+    <details class="adv">
+      <summary>Proxy / cookie</summary>
+      <label class="field" style="margin-top:12px">
+        <span>CORS proxy</span>
+        <input id="png-proxy" type="text" class="mono" placeholder="http://localhost:8788/proxy?url=">
+      </label>
+      <label class="field">
+        <span>Cookie</span>
+        <input id="png-cookie" type="text" class="mono">
+      </label>
+    </details>
+    <div class="actions">
+      <button type="button" class="btn primary" id="png-go">Convert to PNG</button>
+      <button type="button" class="btn" id="png-dl" hidden>Download PNG</button>
+    </div>
+    <div class="log" id="png-log"></div>
+    <div class="preview" id="png-preview" hidden><img id="png-img" alt="preview"></div>
+  </section>
+
+  <!-- ========== HOW TO ========== -->
+  <section class="panel tutorial" id="tab-help">
+    <h2>Setup</h2>
+    <ol>
+      <li>Install Node.js.</li>
+      <li>In this folder run <code>npm install pdf-lib sharp</code> then <code>node server.js</code>.</li>
+      <li>Open this HTML file in Chrome or Edge. Keep the terminal running.</li>
+    </ol>
+
+    <h2>Download a book</h2>
+    <ol>
+      <li>Open <strong>Batch downloader</strong>.</li>
+      <li>Paste an example page SVG URL. Check that the pattern has <code>{n}</code>.</li>
+      <li>Set the page range. Leave “Download referenced images” on.</li>
+      <li>If the site needs login: proxy = <code>http://localhost:8788/proxy?url=</code> and paste your Cookie header.</li>
+      <li>Start → Download ZIP → unzip somewhere convenient.</li>
+    </ol>
+
+    <h2>Make a PDF</h2>
+    <ol>
+      <li>Open <strong>Folder → PDF</strong>.</li>
+      <li>For a big book, paste the <em>absolute</em> path to the unzipped folder and use <strong>Convert via local server</strong>.</li>
+      <li>When it finishes, open the <code>combined.pdf</code> sitting next to that folder (File Explorer).</li>
+      <li>Small sets can use “Convert in browser” after choosing the folder.</li>
+    </ol>
+
+    <h2>IDM / “Failed to fetch”</h2>
+    <p>Internet Download Manager sometimes intercepts PDF responses from localhost. The server writes the file to disk on purpose so that doesn’t matter. Open the path shown in the log.</p>
+
+    <h2>License &amp; responsibility</h2>
+    <p>© 2026 Avrixfal (GitHub: VoxyB89). Proprietary — see <code>LICENSE</code>. You may use what you download from the official source; you may not sell or redistribute the toolkit.</p>
+    <p>You are solely responsible for compliance with copyright and site terms for anything you download or convert. The author is not liable for misuse or legal claims stemming from your use of these tools.</p>
+  </section>
+</div>
+
+  <footer class="site-footer">
+    <p>Made with <span class="heart">♥</span> by Adrix</p>
+    <p>© 2026 VoxyB89. All rights reserved.</p>
+    <p>
+      SVG Book Toolkit ·
+      <a href="https://github.com/VoxyB89" target="_blank" rel="noopener">GitHub</a>
+      · You are responsible for how you use this tool
+    </p>
+  </footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/svg2pdf.js@2.2.3/dist/svg2pdf.umd.min.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  /* ----- tabs ----- */
+  const tabBtns = document.querySelectorAll('#tabs button');
+  const panels = {
+    dl: document.getElementById('tab-dl'),
+    pdf: document.getElementById('tab-pdf'),
+    png: document.getElementById('tab-png'),
+    help: document.getElementById('tab-help')
+  };
+  tabBtns.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      tabBtns.forEach((b) => b.classList.remove('active'));
+      btn.classList.add('active');
+      Object.keys(panels).forEach((k) => panels[k].classList.toggle('active', k === btn.dataset.tab));
+    });
+  });
+
+  function logTo(el, text, kind) {
+    const div = document.createElement('div');
+    div.className = 'line' + (kind ? ' ' + kind : '');
+    div.textContent = text;
+    el.appendChild(div);
+    el.scrollTop = el.scrollHeight;
+  }
+
+  /* =====================================================================
+     BATCH DOWNLOADER
+     ===================================================================== */
+  const dlLog = document.getElementById('dl-log');
+  const dlFill = document.getElementById('dl-fill');
+  let dlRunning = false;
+  let dlZip = null;
+
+  document.getElementById('dl-url').addEventListener('input', () => {
+    const url = document.getElementById('dl-url').value.trim();
+    const re = /\d+/g;
+    let m, last;
+    while ((m = re.exec(url)) !== null) last = m;
+    if (!last) return;
+    const tpl = document.getElementById('dl-tpl');
+    if (!tpl.dataset.touched) {
+      tpl.value = url.slice(0, last.index) + '{n}' + url.slice(last.index + last[0].length);
+    }
+    const pad = document.getElementById('dl-pad');
+    if (!pad.dataset.touched && last[0].length > 1 && last[0][0] === '0') pad.value = last[0].length;
+  });
+  document.getElementById('dl-tpl').addEventListener('input', function () { this.dataset.touched = '1'; });
+  document.getElementById('dl-pad').addEventListener('input', function () { this.dataset.touched = '1'; });
+
+  function fmtN(n, pad) {
+    const s = String(n);
+    return pad > 0 ? s.padStart(pad, '0') : s;
+  }
+
+  function collectRefs(svgText, svgUrl) {
+    const refs = [];
+    const seen = new Set();
+    function add(href) {
+      if (!href) return;
+      href = String(href).trim();
+      if (!href || href.startsWith('data:') || href.startsWith('#') || href.startsWith('javascript:')) return;
+      let abs;
+      try { abs = new URL(href, svgUrl).href; } catch (_) { return; }
+      if (seen.has(abs)) return;
+      seen.add(abs);
+      refs.push({ href, absUrl: abs });
+    }
+    try {
+      const doc = new DOMParser().parseFromString(svgText, 'image/svg+xml');
+      doc.querySelectorAll('image').forEach((el) => {
+        add(el.getAttribute('href'));
+        add(el.getAttributeNS('http://www.w3.org/1999/xlink', 'href'));
+      });
+      const urlRe = /url\(\s*['"]?([^'")]+)['"]?\s*\)/gi;
+      doc.querySelectorAll('[style],style').forEach((el) => {
+        const t = el.getAttribute('style') || el.textContent || '';
+        let m;
+        while ((m = urlRe.exec(t)) !== null) add(m[1]);
+      });
+    } catch (_) {}
+    const hrefRe = /(?:xlink:)?href\s*=\s*["']([^"']+)["']/gi;
+    let m;
+    while ((m = hrefRe.exec(svgText)) !== null) add(m[1]);
+    return refs;
+  }
+
+  function assetZipPath(href, absUrl, svgUrl) {
+    try {
+      const svgDir = new URL('.', svgUrl);
+      const abs = new URL(absUrl);
+      if (abs.href.startsWith(svgDir.href)) {
+        let rel = decodeURIComponent(abs.pathname);
+        const basePath = svgDir.pathname;
+        if (rel.startsWith(basePath)) rel = rel.slice(basePath.length);
+        rel = rel.replace(/^\/+/, '');
+        if (rel) return rel;
+      }
+    } catch (_) {}
+    if (href && !/^https?:\/\//i.test(href)) return href.replace(/^\.\//, '').replace(/^\/+/, '');
+    try {
+      const parts = new URL(absUrl).pathname.split('/').filter(Boolean);
+      if (parts.length >= 2) return parts.slice(-2).join('/');
+      return 'img/' + (parts.pop() || 'asset.bin');
+    } catch (_) {
+      return 'img/asset.bin';
+    }
+  }
+
+  function rewriteHrefs(svgText, map) {
+    let out = svgText;
+    for (const [from, to] of map) {
+      if (!from || from === to) continue;
+      const esc = from.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      out = out.replace(new RegExp('((?:xlink:)?href\\s*=\\s*["\'])' + esc + '(["\'])', 'gi'), '$1' + to + '$2');
+      out = out.replace(new RegExp('url\\(\\s*[\'"]?' + esc + '[\'"]?\\s*\\)', 'gi'), 'url(' + to + ')');
+    }
+    return out;
+  }
+
+  async function dlFetch(url, proxy, cookie) {
+    const opts = { mode: 'cors', cache: 'no-store' };
+    if (cookie) opts.headers = { 'X-Inject-Cookie': cookie };
+    const final = proxy ? proxy + encodeURIComponent(url) : url;
+    const resp = await fetch(final, opts);
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const buf = await resp.arrayBuffer();
+    const ct = resp.headers.get('content-type') || '';
+    return { buf, ct, text: new TextDecoder().decode(buf) };
+  }
+
+  document.getElementById('dl-stop').addEventListener('click', () => {
+    dlRunning = false;
+    logTo(dlLog, 'Stopping…', 'info');
+  });
+
+  document.getElementById('dl-start').addEventListener('click', async () => {
+    const tpl = document.getElementById('dl-tpl').value.trim();
+    if (!tpl.includes('{n}')) {
+      logTo(dlLog, 'Pattern needs {n}', 'err');
+      return;
+    }
+    let from = parseInt(document.getElementById('dl-from').value, 10);
+    let to = parseInt(document.getElementById('dl-to').value, 10);
+    if (isNaN(from) || isNaN(to)) return;
+    if (from > to) { const t = from; from = to; to = t; }
+    const pad = Math.max(0, parseInt(document.getElementById('dl-pad').value, 10) || 0);
+    const proxy = document.getElementById('dl-proxy').value.trim();
+    const cookie = document.getElementById('dl-cookie').value.trim();
+    const wantAssets = document.getElementById('dl-assets').checked;
+    const doRewrite = document.getElementById('dl-rewrite').checked;
+    const wantPng = document.getElementById('dl-png').checked;
+    const conc = Math.min(8, Math.max(1, parseInt(document.getElementById('dl-conc').value, 10) || 3));
+
+    if (typeof JSZip !== 'function') {
+      logTo(dlLog, 'JSZip failed to load (CDN)', 'err');
+      return;
+    }
+
+    dlLog.innerHTML = '';
+    document.getElementById('dl-zip').hidden = true;
+    dlZip = new JSZip();
+    dlRunning = true;
+    document.getElementById('dl-start').disabled = true;
+    document.getElementById('dl-stop').disabled = false;
+
+    const nums = [];
+    for (let n = from; n <= to; n++) nums.push(n);
+    let done = 0;
+    const cache = new Map();
+    let idx = 0;
+
+    async function worker() {
+      while (dlRunning && idx < nums.length) {
+        const n = nums[idx++];
+        const numStr = fmtN(n, pad);
+        const svgUrl = tpl.replace('{n}', numStr);
+        try {
+          const res = await dlFetch(svgUrl, proxy, cookie);
+          const map = new Map();
+          if (wantAssets) {
+            const refs = collectRefs(res.text, svgUrl);
+            for (const ref of refs) {
+              if (!dlRunning) break;
+              try {
+                let entry = cache.get(ref.absUrl);
+                if (!entry) {
+                  const r = await dlFetch(ref.absUrl, proxy, cookie);
+                  const zpath = assetZipPath(ref.href, ref.absUrl, svgUrl);
+                  entry = { buf: r.buf, zpath };
+                  cache.set(ref.absUrl, entry);
+                }
+                if (!dlZip.file(entry.zpath)) dlZip.file(entry.zpath, entry.buf);
+                map.set(ref.href, entry.zpath);
+                map.set(ref.absUrl, entry.zpath);
+                logTo(dlLog, '  → ' + entry.zpath, 'ok');
+              } catch (e) {
+                logTo(dlLog, '  miss ' + ref.href + ': ' + e.message, 'err');
+              }
+            }
+          }
+          let out = res.text;
+          if (doRewrite && map.size) out = rewriteHrefs(out, map);
+          dlZip.file(numStr + '.svg', out);
+          logTo(dlLog, numStr + '.svg ok', 'ok');
+        } catch (e) {
+          logTo(dlLog, numStr + ' failed: ' + e.message, 'err');
+        }
+        done++;
+        dlFill.style.width = Math.round((done / nums.length) * 100) + '%';
+      }
+    }
+
+    await Promise.all(Array.from({ length: conc }, () => worker()));
+    dlRunning = false;
+    document.getElementById('dl-start').disabled = false;
+    document.getElementById('dl-stop').disabled = true;
+    document.getElementById('dl-zip').hidden = false;
+    logTo(dlLog, 'Finished. Download the ZIP.', 'ok');
+  });
+
+  document.getElementById('dl-zip').addEventListener('click', async () => {
+    if (!dlZip) return;
+    const blob = await dlZip.generateAsync({ type: 'blob', compression: 'DEFLATE' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'svg-batch.zip';
+    a.click();
+  });
+
+  /* =====================================================================
+     FOLDER → PDF
+     ===================================================================== */
+  const pdfLog = document.getElementById('pdf-log');
+  const pdfFill = document.getElementById('pdf-fill');
+  let pdfEntries = [];
+  let pdfAssetMap = new Map();
+  let pdfBasename = new Map();
+  let pdfBlob = null;
+  let pdfServerPath = null;
+
+  const ASSET_DIR_RE = /\/(img|images|image|shade|shades|assets|asset|media|pics|pictures|resources)\//i;
+  const RASTER_EXT = /\.(png|jpe?g|gif|webp|bmp)$/i;
+  const SVG_EXT = /\.svg$/i;
+
+  function normPath(p) {
+    return String(p || '').replace(/\\/g, '/').replace(/^\.\//, '');
+  }
+  function isPageFile(f) {
+    const p = normPath(f.webkitRelativePath || f.name);
+    if (!SVG_EXT.test(p) && !RASTER_EXT.test(p)) return false;
+    if (ASSET_DIR_RE.test('/' + p + '/')) return false;
+    const parts = p.split('/');
+    if (parts.length >= 3 && RASTER_EXT.test(parts[parts.length - 1])) return false;
+    if (parts.length === 2 && RASTER_EXT.test(parts[1])) return false;
+    return true;
+  }
+
+  function naturalCompare(a, b) {
+    const ax = [], bx = [];
+    a.replace(/(\d+)|(\D+)/g, (_, d, s) => { ax.push([d ? parseInt(d, 10) : Infinity, s || '']); return ''; });
+    b.replace(/(\d+)|(\D+)/g, (_, d, s) => { bx.push([d ? parseInt(d, 10) : Infinity, s || '']); return ''; });
+    while (ax.length && bx.length) {
+      const an = ax.shift(), bn = bx.shift();
+      const nc = an[0] - bn[0];
+      if (nc) return nc;
+      const sc = an[1].localeCompare(bn[1]);
+      if (sc) return sc;
+    }
+    return ax.length - bx.length;
+  }
+
+  function renderPdfList() {
+    const wrap = document.getElementById('pdf-list-wrap');
+    const list = document.getElementById('pdf-list');
+    wrap.hidden = !pdfEntries.length;
+    document.getElementById('pdf-count').textContent =
+      pdfEntries.length + ' page(s)' + (pdfAssetMap.size ? ', ' + pdfAssetMap.size + ' assets indexed' : '');
+    list.innerHTML = '';
+    pdfEntries.forEach((e, i) => {
+      const li = document.createElement('li');
+      li.innerHTML = '<span style="color:var(--muted)">' + (i + 1) + '.</span><span class="name">' + e.path + '</span>';
+      list.appendChild(li);
+    });
+  }
+
+  async function addPdfFiles(fileList) {
+    const all = Array.from(fileList);
+    pdfAssetMap = new Map();
+    pdfBasename = new Map();
+    pdfEntries = [];
+    for (const f of all) {
+      if (!SVG_EXT.test(f.name) && !RASTER_EXT.test(f.name)) continue;
+      const p = normPath(f.webkitRelativePath || f.name);
+      pdfAssetMap.set(p, f);
+      const bn = p.split('/').pop();
+      if (!pdfBasename.has(bn)) pdfBasename.set(bn, []);
+      pdfBasename.get(bn).push(p);
+    }
+    const pages = all.filter(isPageFile).sort((a, b) =>
+      naturalCompare(normPath(a.webkitRelativePath || a.name), normPath(b.webkitRelativePath || b.name))
+    );
+    for (const f of pages) {
+      pdfEntries.push({ file: f, path: normPath(f.webkitRelativePath || f.name) });
+    }
+    renderPdfList();
+    logTo(pdfLog, 'Loaded ' + pdfEntries.length + ' pages, ' + pdfAssetMap.size + ' media files', 'ok');
+  }
+
+  document.getElementById('pdf-pick-folder').onclick = () => document.getElementById('pdf-folder-input').click();
+  document.getElementById('pdf-pick-files').onclick = () => document.getElementById('pdf-files-input').click();
+  document.getElementById('pdf-folder-input').onchange = (e) => { addPdfFiles(e.target.files); e.target.value = ''; };
+  document.getElementById('pdf-files-input').onchange = (e) => { addPdfFiles(e.target.files); e.target.value = ''; };
+
+  const drop = document.getElementById('pdf-drop');
+  ['dragenter', 'dragover'].forEach((ev) => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.add('drag'); }));
+  ['dragleave', 'drop'].forEach((ev) => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.remove('drag'); }));
+  drop.addEventListener('drop', (e) => {
+    if (e.dataTransfer && e.dataTransfer.files.length) addPdfFiles(e.dataTransfer.files);
+  });
+
+  document.getElementById('pdf-health').onclick = async () => {
+    const base = document.getElementById('pdf-server').value.replace(/\/$/, '');
+    try {
+      const r = await fetch(base + '/health');
+      const j = await r.json();
+      logTo(pdfLog, 'Server OK ' + JSON.stringify(j), 'ok');
+    } catch (e) {
+      logTo(pdfLog, 'Server down: ' + e.message + ' — run node server.js', 'err');
+    }
+  };
+
+  let pdfServerBusy = false;
+  document.getElementById('pdf-server-go').onclick = async () => {
+    if (pdfServerBusy) {
+      logTo(pdfLog, 'Already converting — wait.', 'err');
+      return;
+    }
+    const base = document.getElementById('pdf-server').value.replace(/\/$/, '');
+    const folder = document.getElementById('pdf-abspath').value.trim();
+    if (!folder) {
+      logTo(pdfLog, 'Enter absolute folder path for the server.', 'err');
+      return;
+    }
+    pdfServerBusy = true;
+    document.getElementById('pdf-server-go').disabled = true;
+    pdfLog.innerHTML = '';
+    logTo(pdfLog, 'Server convert… ' + folder, 'info');
+    logTo(pdfLog, 'Leave this tab open. PDF will be written next to the folder.', 'ok');
+    const tick = setInterval(() => logTo(pdfLog, 'Still working… check the Node terminal', 'info'), 30000);
+    try {
+      const pageSize = document.getElementById('pdf-size').value;
+      const outName = document.getElementById('pdf-outname').value.trim() || 'combined.pdf';
+      const resp = await fetch(base + '/convert', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ folder, pageSize, dpi: 150, outputName: outName })
+      });
+      if (!resp.ok) throw new Error(await resp.text() || ('HTTP ' + resp.status));
+      const data = await resp.json();
+      (data.log || []).forEach((l) => logTo(pdfLog, String(l), 'ok'));
+      logTo(pdfLog, 'Saved: ' + data.path + ' (' + Math.round(data.bytes / 1024) + ' KB)', 'ok');
+      pdfServerPath = data.path;
+      const btn = document.getElementById('pdf-download');
+      btn.hidden = false;
+      btn.textContent = 'Open PDF from server';
+      btn.onclick = () => window.open(base + '/open?path=' + encodeURIComponent(data.path), '_blank');
+    } catch (e) {
+      logTo(pdfLog, 'Failed: ' + e.message, 'err');
+      logTo(pdfLog, 'If IDM is installed, ignore browser errors — open combined.pdf from the book folder after the terminal says Convert done.', 'err');
+    } finally {
+      clearInterval(tick);
+      pdfServerBusy = false;
+      document.getElementById('pdf-server-go').disabled = false;
+    }
+  };
+
+  // Lightweight browser convert (small sets)
+  document.getElementById('pdf-browser-go').onclick = async () => {
+    if (!pdfEntries.length) {
+      logTo(pdfLog, 'Load a folder first (or use server path for big books).', 'err');
+      return;
+    }
+    if (!window.jspdf || !window.jspdf.jsPDF) {
+      logTo(pdfLog, 'jsPDF CDN not loaded', 'err');
+      return;
+    }
+    pdfLog.innerHTML = '';
+    logTo(pdfLog, 'Browser convert of ' + pdfEntries.length + ' pages…', 'info');
+    const PRESETS = {
+      a4p: [794, 1123], a4l: [1123, 794],
+      letterp: [816, 1056], letterl: [1056, 816]
+    };
+    const sizeKey = document.getElementById('pdf-size').value;
+    const target = sizeKey === 'own' ? null : (PRESETS[sizeKey] || PRESETS.a4p);
+
+    const { jsPDF } = window.jspdf;
+    let doc = null;
+    let pages = 0;
+
+    async function fileToDataUrl(file) {
+      return new Promise((res, rej) => {
+        const r = new FileReader();
+        r.onload = () => res(r.result);
+        r.onerror = () => rej(new Error('read fail'));
+        r.readAsDataURL(file);
+      });
+    }
+
+    function resolveAsset(svgPath, href) {
+      if (!href || href.startsWith('data:') || href.startsWith('#') || /^https?:/i.test(href)) return null;
+      let h = normPath(href.split('?')[0]);
+      const stem = (svgPath.split('/').pop() || '').replace(/\.[^.]+$/, '');
+      const candidates = [h];
+      if (stem && !h.startsWith(stem + '/')) candidates.push(stem + '/' + h);
+      for (const c of candidates) if (pdfAssetMap.has(c)) return c;
+      const bn = h.split('/').pop();
+      const list = pdfBasename.get(bn);
+      if (list && list.length === 1) return list[0];
+      return candidates[0];
+    }
+
+    async function inlineSvg(text, svgPath) {
+      const docp = new DOMParser().parseFromString(text, 'image/svg+xml');
+      const root = docp.documentElement;
+      for (const el of root.querySelectorAll('image')) {
+        const href = el.getAttribute('href') || el.getAttributeNS('http://www.w3.org/1999/xlink', 'href') || '';
+        if (!href || href.startsWith('data:')) continue;
+        const ap = resolveAsset(svgPath, href);
+        const f = ap && pdfAssetMap.get(ap);
+        if (f) {
+          const du = await fileToDataUrl(f);
+          el.setAttribute('href', du);
+        }
+      }
+      return new XMLSerializer().serializeToString(docp);
+    }
+
+    for (let i = 0; i < pdfEntries.length; i++) {
+      const entry = pdfEntries[i];
+      try {
+        let dataUrl, w, h, fmt = 'JPEG';
+        if (SVG_EXT.test(entry.path)) {
+          let text = await entry.file.text();
+          text = await inlineSvg(text, entry.path);
+          // rasterize via canvas
+          const parsed = new DOMParser().parseFromString(text, 'image/svg+xml');
+          const svgEl = parsed.documentElement;
+          const vb = (svgEl.getAttribute('viewBox') || '').split(/[\s,]+/).map(Number);
+          w = parseFloat(svgEl.getAttribute('width')) || (vb[2] || 800);
+          h = parseFloat(svgEl.getAttribute('height')) || (vb[3] || 600);
+          svgEl.setAttribute('width', String(w));
+          svgEl.setAttribute('height', String(h));
+          const blob = new Blob([new XMLSerializer().serializeToString(svgEl)], { type: 'image/svg+xml' });
+          const url = URL.createObjectURL(blob);
+          const img = await new Promise((res, rej) => {
+            const im = new Image();
+            im.onload = () => res(im);
+            im.onerror = () => rej(new Error('svg draw fail'));
+            im.src = url;
+          });
+          URL.revokeObjectURL(url);
+          const c = document.createElement('canvas');
+          c.width = Math.round(w * 1.5);
+          c.height = Math.round(h * 1.5);
+          const ctx = c.getContext('2d');
+          ctx.fillStyle = '#fff';
+          ctx.fillRect(0, 0, c.width, c.height);
+          ctx.drawImage(img, 0, 0, c.width, c.height);
+          dataUrl = c.toDataURL('image/jpeg', 0.85);
+          w = c.width; h = c.height;
+        } else {
+          dataUrl = await fileToDataUrl(entry.file);
+          const img = await new Promise((res, rej) => {
+            const im = new Image();
+            im.onload = () => res(im);
+            im.onerror = () => rej(new Error('img fail'));
+            im.src = dataUrl;
+          });
+          w = img.naturalWidth; h = img.naturalHeight;
+        }
+        const pageW = target ? target[0] : w;
+        const pageH = target ? target[1] : h;
+        if (!doc) {
+          doc = new jsPDF({ unit: 'px', format: [pageW, pageH], orientation: pageW >= pageH ? 'landscape' : 'portrait', hotfixes: ['px_scaling'], compress: true });
+        } else {
+          doc.addPage([pageW, pageH], pageW >= pageH ? 'landscape' : 'portrait');
+        }
+        // stretch fill when uniform
+        const dw = target ? pageW : w;
+        const dh = target ? pageH : h;
+        doc.addImage(dataUrl, 'JPEG', 0, 0, dw, dh);
+        pages++;
+        logTo(pdfLog, entry.path + ' → page ' + pages, 'ok');
+      } catch (e) {
+        logTo(pdfLog, entry.path + ' fail: ' + e.message, 'err');
+      }
+      pdfFill.style.width = Math.round(((i + 1) / pdfEntries.length) * 100) + '%';
+    }
+
+    if (!doc || !pages) {
+      logTo(pdfLog, 'No pages produced', 'err');
+      return;
+    }
+    pdfBlob = doc.output('blob');
+    logTo(pdfLog, 'Done, ' + pages + ' pages, ' + Math.round(pdfBlob.size / 1024) + ' KB', 'ok');
+    const btn = document.getElementById('pdf-download');
+    btn.hidden = false;
+    btn.textContent = 'Download PDF';
+    btn.onclick = () => {
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(pdfBlob);
+      a.download = document.getElementById('pdf-outname').value || 'combined.pdf';
+      a.click();
+    };
+  };
+
+  /* =====================================================================
+     COMPOSITE → PNG
+     ===================================================================== */
+  const pngLog = document.getElementById('png-log');
+  let pngBlob = null;
+
+  async function pngFetch(url) {
+    const proxy = document.getElementById('png-proxy').value.trim();
+    const cookie = document.getElementById('png-cookie').value.trim();
+    const opts = { mode: 'cors', cache: 'no-store' };
+    if (cookie) opts.headers = { 'X-Inject-Cookie': cookie };
+    const final = proxy ? proxy + encodeURIComponent(url) : url;
+    const r = await fetch(final, opts);
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    return r;
+  }
+
+  document.getElementById('png-go').onclick = async () => {
+    pngLog.innerHTML = '';
+    document.getElementById('png-dl').hidden = true;
+    document.getElementById('png-preview').hidden = true;
+    try {
+      let svgText = document.getElementById('png-markup').value.trim();
+      let base = document.getElementById('png-base').value.trim();
+      const url = document.getElementById('png-url').value.trim();
+      if (url) {
+        const r = await pngFetch(url);
+        svgText = await r.text();
+        if (!base) {
+          try { base = new URL('.', url).href; } catch (_) {}
+        }
+      }
+      if (!svgText) throw new Error('No SVG');
+      if (!base) base = location.href;
+
+      const doc = new DOMParser().parseFromString(svgText, 'image/svg+xml');
+      const root = doc.documentElement;
+      const images = [...root.querySelectorAll('image')];
+      for (const el of images) {
+        const href = el.getAttribute('href') || el.getAttributeNS('http://www.w3.org/1999/xlink', 'href') || '';
+        if (!href || href.startsWith('data:')) continue;
+        let abs;
+        try { abs = new URL(href, base).href; } catch (_) { continue; }
+        try {
+          const r = await pngFetch(abs);
+          const buf = await r.arrayBuffer();
+          const ct = r.headers.get('content-type') || 'image/png';
+          const bytes = new Uint8Array(buf);
+          let bin = '';
+          for (let i = 0; i < bytes.length; i += 0x8000) {
+            bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+          }
+          const du = 'data:' + ct.split(';')[0] + ';base64,' + btoa(bin);
+          el.setAttribute('href', du);
+          logTo(pngLog, 'inlined ' + href, 'ok');
+        } catch (e) {
+          logTo(pngLog, 'miss ' + href + ': ' + e.message, 'err');
+        }
+      }
+
+      let w = parseFloat(root.getAttribute('width')) || 800;
+      let h = parseFloat(root.getAttribute('height')) || 600;
+      const vb = (root.getAttribute('viewBox') || '').split(/[\s,]+/).map(Number);
+      if (vb.length === 4) {
+        if (!root.getAttribute('width')) w = vb[2];
+        if (!root.getAttribute('height')) h = vb[3];
+      }
+      const scale = parseFloat(document.getElementById('png-scale').value) || 2;
+      root.setAttribute('width', String(w));
+      root.setAttribute('height', String(h));
+      const str = new XMLSerializer().serializeToString(doc);
+      const blob = new Blob([str], { type: 'image/svg+xml;charset=utf-8' });
+      const obj = URL.createObjectURL(blob);
+      const img = await new Promise((res, rej) => {
+        const im = new Image();
+        im.onload = () => res(im);
+        im.onerror = () => rej(new Error('raster failed'));
+        im.src = obj;
+      });
+      URL.revokeObjectURL(obj);
+      const c = document.createElement('canvas');
+      c.width = Math.round(w * scale);
+      c.height = Math.round(h * scale);
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = document.getElementById('png-bg').value || '#ffffff';
+      ctx.fillRect(0, 0, c.width, c.height);
+      ctx.drawImage(img, 0, 0, c.width, c.height);
+      pngBlob = await new Promise((res) => c.toBlob(res, 'image/png'));
+      document.getElementById('png-img').src = URL.createObjectURL(pngBlob);
+      document.getElementById('png-preview').hidden = false;
+      document.getElementById('png-dl').hidden = false;
+      logTo(pngLog, 'PNG ready ' + c.width + '×' + c.height, 'ok');
+    } catch (e) {
+      logTo(pngLog, e.message, 'err');
+    }
+  };
+
+  document.getElementById('png-dl').onclick = () => {
+    if (!pngBlob) return;
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(pngBlob);
+    a.download = 'composite.png';
+    a.click();
+  };
+})();
+</script>
+</body>
+</html>
